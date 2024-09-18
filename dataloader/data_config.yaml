@@ -1,0 +1,2 @@
+train_img_dir : '/scratch/qingqu_root/qingqu1/shared_data/coco2017/train2017'
+train_annotation_file : '/scratch/qingqu_root/qingqu1/shared_data/coco2017/annotations/captions_train2017.json'

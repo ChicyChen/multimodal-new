@@ -1,0 +1,49 @@
+per_gpu_train_batch_size : 2 # 128 exeeds GPU memory
+per_gpu_eval_batch_size : 2 # not used in CLIP training
+n_gpu : 1
+num_workers : 4
+num_train_epochs : 200 # number of epochs to train, defalut 35
+
+gradient_accumulation_steps : 1 # Number of updates steps to accumulate before backward
+
+logging_steps : 1 #  log every this steps
+save_steps : 10 # 1000 steps take 1 hour with 4 GTX1080 GPUs and batch size = 256 (64 per GPU), defalut 1000
+small_save_steps : 10
+small_save_step_before: 200
+
+saved_checkpoints : 3_shrink_nw_train_checkpoints_num2_ufm_0.1
+logs : 3_shrink_nw_logs_num2_ufm_0.1
+temp : 0.1
+learn_temp : 1
+
+optimizer:
+  params:
+    eps: 1.0e-08
+    lr: 5e-5 # defalut 5e-5
+    weight_decay: 0.1
+  type: AdamW
+
+
+# per_gpu_train_batch_size : 256 # 128 exeeds GPU memory
+# per_gpu_eval_batch_size : 256 # not used in CLIP training
+# n_gpu : 1
+# num_workers : 4
+# num_train_epochs : 35 # number of epochs to train, defalut 35
+
+# gradient_accumulation_steps : 1 # Number of updates steps to accumulate before backward
+
+# logging_steps : 100 #  log every this steps
+# save_steps : 500 # 1000 steps take 1 hour with 4 GTX1080 GPUs and batch size = 256 (64 per GPU), defalut 1000
+# small_save_steps : 10
+# small_save_step_before: 200
+
+# saved_checkpoints : 3_shrink_nw_train_checkpoints_1e-1_5e-4_1e-1
+# logs : 3_shrink_nw_logs_1e-1_5e-4
+# temp : 0.01
+
+# optimizer:
+#   params:
+#     eps: 1.0e-08
+#     lr: 5e-4 # defalut 5e-4
+#     weight_decay: 0.1
+#   type: AdamW
