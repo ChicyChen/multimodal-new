@@ -1,8 +1,82 @@
+RN50_3_3: 
+  embed_dim : 3
+  image_resolution : 224
+  vision_layers : [3, 4, 6, 3]
+  vision_width : 3
+  vision_patch_size : 0 # ideally it should be none
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 6 # 12 in CLIP
+
+RN50_3_256: 
+  embed_dim : 3
+  image_resolution : 224
+  vision_layers : [3, 4, 6, 3]
+  vision_width : 256
+  vision_patch_size : 0 # ideally it should be none
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 6 # 12 in CLIP
+
+RN50_3_1024: 
+  embed_dim : 3
+  image_resolution : 224
+  vision_layers : [3, 4, 6, 3]
+  vision_width : 256
+  vision_patch_size : 0 # ideally it should be none
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 6 # 12 in CLIP
+
 RN50_3: 
   embed_dim : 3
   image_resolution : 224
   vision_layers : [3, 4, 6, 3]
   vision_width : 64
+  vision_patch_size : 0 # ideally it should be none
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 6 # 12 in CLIP
+
+
+RN50_4: 
+  embed_dim : 1024
+  image_resolution : 224
+  vision_layers : [3, 4, 6, 3]
+  vision_width : 4
+  vision_patch_size : 0 # ideally it should be none
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 6 # 12 in CLIP
+
+
+RN50_16: 
+  embed_dim : 1024
+  image_resolution : 224
+  vision_layers : [3, 4, 6, 3]
+  vision_width : 16
+  vision_patch_size : 0 # ideally it should be none
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 6 # 12 in CLIP
+
+RN50_1024: 
+  embed_dim : 1024
+  image_resolution : 224
+  vision_layers : [3, 4, 6, 3]
+  vision_width : 1024
   vision_patch_size : 0 # ideally it should be none
   context_length : 77
   vocab_size : 49408
@@ -38,6 +112,42 @@ ViTB16_3:
   embed_dim : 3
   image_resolution : 224
   vision_layers : 12
+  vision_width : 768
+  vision_patch_size : 16
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 12
+
+ViTB16_3_3:
+  embed_dim : 3
+  image_resolution : 224
+  vision_layers : 12
+  vision_width : 64
+  vision_patch_size : 16
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 12
+
+ViTB16_layer2:
+  embed_dim : 512
+  image_resolution : 224
+  vision_layers : 2
+  vision_width : 768
+  vision_patch_size : 16
+  context_length : 77
+  vocab_size : 49408
+  transformer_width : 512
+  transformer_heads : 8
+  transformer_layers : 12
+
+ViTB16_layer32:
+  embed_dim : 512
+  image_resolution : 224
+  vision_layers : 2
   vision_width : 768
   vision_patch_size : 16
   context_length : 77

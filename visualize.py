@@ -70,8 +70,8 @@ def set_axes_equal(ax):
     ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
 
 
-save_folder = "/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/nw_train_align_checkpoints_learn_5e-4_1e-1"
-step_list = [10000,20000]
+save_folder = "/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/nw_train_tiny2048_checkpoints_learn_5e-4_1e-1"
+step_list = [1600]
 # step_list = [5000,10000,15000,20000]
 # step_list = list(range(10,201,50))
 # step_list = list(range(10,100,10))
@@ -108,8 +108,9 @@ for step in step_list:
     y = np.sin(u) * np.sin(v)
     z = np.cos(v)
     ax.plot_surface(r*x, r*y, r*z, cmap=plt.cm.YlGnBu_r, alpha=0.2)
-    ax.scatter(features_2d[:-len(all_img_features), 0], features_2d[:-len(all_img_features), 1], features_2d[:-len(all_img_features), 2], c='red')
-    ax.scatter(features_2d[-len(all_img_features):, 0], features_2d[-len(all_img_features):, 1], features_2d[-len(all_img_features):, 2], c='blue')
+    ax.scatter(features_2d[:-len(all_img_features), 0], features_2d[:-len(all_img_features), 1], features_2d[:-len(all_img_features), 2], c='red', label="image")
+    ax.scatter(features_2d[-len(all_img_features):, 0], features_2d[-len(all_img_features):, 1], features_2d[-len(all_img_features):, 2], c='blue', label="text")
+    plt.legend()
     for i in range(len(all_img_features)):
         ax.plot([features_2d[i, 0], features_2d[len(all_img_features)+i, 0]], [features_2d[i, 1], features_2d[len(all_img_features)+i, 1]], [features_2d[i, 2], features_2d[len(all_img_features)+i, 2]], c='black', alpha=0.1)
     ax.set_box_aspect([1.0, 1.0, 1.0])
@@ -148,12 +149,26 @@ for step in step_list:
     y = np.sin(u) * np.sin(v)
     z = np.cos(v)
     ax.plot_surface(r*x, r*y, r*z, cmap=plt.cm.YlGnBu_r, alpha=0.2)
+    # ax.scatter(features_2d[:-len(all_img_features), 0], features_2d[:-len(all_img_features), 1], features_2d[:-len(all_img_features), 2], c='red', label="image")
+    # ax.scatter(features_2d[-len(all_img_features):, 0], features_2d[-len(all_img_features):, 1], features_2d[-len(all_img_features):, 2], c='blue', label="text")
+    # plt.legend()
+
     ax.scatter(features_2d[:-len(all_img_features), 0], features_2d[:-len(all_img_features), 1], features_2d[:-len(all_img_features), 2], c='red')
     ax.scatter(features_2d[-len(all_img_features):, 0], features_2d[-len(all_img_features):, 1], features_2d[-len(all_img_features):, 2], c='blue')
+    
     for i in range(len(all_img_features)):
         ax.plot([features_2d[i, 0], features_2d[len(all_img_features)+i, 0]], [features_2d[i, 1], features_2d[len(all_img_features)+i, 1]], [features_2d[i, 2], features_2d[len(all_img_features)+i, 2]], c='black', alpha=0.1)
-    ax.set_box_aspect([1.0, 1.0, 1.0])
-    set_axes_equal(ax)
+    ax.axis("equal")
+    # ax.set_box_aspect([1.0, 1.0, 1.0])
+    # set_axes_equal(ax)
+
+    ax.xaxis.set_ticks([])
+    ax.yaxis.set_ticks([])
+    ax.zaxis.set_ticks([])  # type: ignore
+
+    ax.axis('off')
+
+    fig.tight_layout()
     save_path = os.path.join(save_folder, f"3d_{step}.png")
     plt.savefig(save_path) 
     plt.close()

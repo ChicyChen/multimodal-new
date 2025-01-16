@@ -8,7 +8,7 @@ from dataloader.dataset import CLIP_COCO_dataset
 from dataloader.data_loaders import get_dataloader
 
 import clip
-from model.model import CLIP_Align
+from model.model import CLIP_2MAlign
 
 from utils.simple_tokenizer import SimpleTokenizer
 from utils.custom_schedulers import get_cosine_schedule_with_warmup, get_cosine_with_hard_restarts_schedule_with_warmup
@@ -89,10 +89,9 @@ def train(config, train_dataset, model):
                 else:
                     print("Training", name)
         for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
-
+            input_images, input_texts = batch
             input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
+            input_texts = input_texts.to(torch.device(config.device))
             
             image_features, text_features = model(input_images, input_texts)
 
@@ -273,7 +272,7 @@ def main():
     model_params = dict(model_config.RN50)
     model_params['vision_layers'] = tuple(model_params['vision_layers'])
     model_params['vision_patch_size'] = None
-    model = CLIP_Align(**model_params)
+    model = CLIP_2MAlign(**model_params)
 
     model = model.to(torch.device(config.device))
 
@@ -290,9 +289,9 @@ def main():
         image_feature_list = []
         text_feature_list = []
         for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
+            input_images, input_texts = batch
             input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
+            input_texts = input_texts.to(torch.device(config.device))
             # print(input_images.shape)
             image_features, text_features = model(input_images, input_texts)
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
@@ -317,9 +316,9 @@ def main():
         image_feature_list = []
         text_feature_list = []
         for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
+            input_images, input_texts = batch
             input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
+            input_texts = input_texts.to(torch.device(config.device))
             # print(input_images.shape)
             image_features, text_features = model(input_images, input_texts)
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
@@ -342,9 +341,9 @@ def main():
         image_feature_list = []
         text_feature_list = []
         for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
+            input_images, input_texts = batch
             input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
+            input_texts = input_texts.to(torch.device(config.device))
             # print(input_images.shape)
             image_features, text_features = model(input_images, input_texts)
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)

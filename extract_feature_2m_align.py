@@ -27,7 +27,7 @@ sys.path.append('/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/utils')
 sys.path.append('/scratch/qingqu_root/qingqu1/siyich/multimodal-gap')
 from util import load_config_file
 from simple_tokenizer import SimpleTokenizer
-from model.model import CLIP, CLIP_Single, CLIP_Same, CLIP_Align
+from model.model import CLIP_2MAlign
 
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
@@ -75,8 +75,8 @@ train_dataloader = get_dataloader(config, train_dataset, is_train=True)
 MODEL_CONFIG_PATH = '/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/utils/model_config.yaml'
 model_config = load_config_file(MODEL_CONFIG_PATH)
 
-save_folder = "/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/nw_train_align_checkpoints_learn_5e-4_1e-1"
-step_list = [0]
+save_folder = "/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/nw_train_2m_align2048_checkpoints_learn_5e-4_1e-1"
+step_list = [1,5,10]
 
 device = "cuda"
 
@@ -89,7 +89,7 @@ for step in step_list:
     model_params = dict(model_config.RN50)
     model_params['vision_layers'] = tuple(model_params['vision_layers'])
     model_params['vision_patch_size'] = None
-    model = CLIP_Align(**model_params)
+    model = CLIP_2MAlign(**model_params)
 
     model = model.to(device)
 
@@ -102,7 +102,6 @@ for step in step_list:
 
     model.eval()
     # model.train()
-
 
    
     """
@@ -135,13 +134,13 @@ for step in step_list:
         im = PIL.Image.open(filename)
 
         image_input = transform(im).unsqueeze(0).to(device)
-        # sot_token = tokenizer.encoder["<|startoftext|>"]
-        # eot_token = tokenizer.encoder["<|endoftext|>"]
-        # tokens = [sot_token] + tokenizer.encode(caption) + [eot_token]
-        # result = torch.zeros(77, dtype=torch.long)
-        # result[:len(tokens)] = torch.tensor(tokens)
-        # text_input = result.unsqueeze(0).to(device)
-        text_input = torch.clone(image_input)
+        sot_token = tokenizer.encoder["<|startoftext|>"]
+        eot_token = tokenizer.encoder["<|endoftext|>"]
+        tokens = [sot_token] + tokenizer.encode(caption) + [eot_token]
+        result = torch.zeros(77, dtype=torch.long)
+        result[:len(tokens)] = torch.tensor(tokens)
+        text_input = result.unsqueeze(0).to(device)
+        # text_input = torch.clone(image_input)
 
         with torch.no_grad():
 

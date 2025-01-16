@@ -58,10 +58,10 @@ num_imgs = 256
 
 
 
-save_folder = "/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/nw_train_img2text2048_checkpoints_learn_5e-4_1e-1"
+save_folder = "/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/nw_train_tiny2048_checkpoints_learn_5e-4_1e-1"
 # step_list = list(range(10,201,50))
 # step_list = list(range(10,100,10))
-step_list = [50000,100000,160000]
+step_list = [1,5,10]
 
 
 

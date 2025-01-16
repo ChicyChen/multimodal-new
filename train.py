@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import numpy as np
 import os
 from omegaconf import OmegaConf
+import random
 
 from dataloader.dataset import CLIP_COCO_dataset
 from dataloader.data_loaders import get_dataloader
@@ -75,13 +76,13 @@ def train(config, train_dataset, model):
 
     for epoch in range(int(config.num_train_epochs)):
         # only for testing, when there is generally good alignment
-        if epoch == 5000:
-            for name, param in model.named_parameters():
-                # print(name, param.requires_grad)
-                if "logit" not in name:
-                    param.requires_grad = False
-                else:
-                    print("Training", name)
+        # if epoch == 5000:
+        #     for name, param in model.named_parameters():
+        #         # print(name, param.requires_grad)
+        #         if "logit" not in name:
+        #             param.requires_grad = False
+        #         else:
+        #             print("Training", name)
         for step, batch in enumerate(train_dataloader):
             input_images, input_texts = batch
 
@@ -94,6 +95,8 @@ def train(config, train_dataset, model):
             # siyi: I do not normalize here for testing! Need to add back!
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
             text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+
+            center_dist = torch.norm(torch.mean(image_features, dim=0) - torch.mean(text_features, dim=0))
 
             if config.learn_temp:
                 if config.n_gpu == 1:
@@ -148,7 +151,7 @@ def train(config, train_dataset, model):
                     
                 model.zero_grad()
 
-                if global_step % config.logging_steps == 0:
+                if global_step % config.logging_steps == 0 or global_step == 1:
                     logger.info("Epoch: {}, global_step: {}, lr: {:.6f}, loss: {:.4f} ({:.4f})".format(epoch, global_step, 
                         optimizer.param_groups[0]["lr"], loss.item(), global_loss / global_step)
                     )
@@ -161,6 +164,7 @@ def train(config, train_dataset, model):
                     logger.info("Epoch: {}, global_step: {}, derivative: {:.4f}".format(epoch, global_step, 
                         inverse_norm * logit_scale)
                     )
+                    logger.info(f"Center distance: {center_dist}")
 
 
                 if (config.save_steps > 0 and global_step % config.save_steps == 0) or \
@@ -256,7 +260,10 @@ def main():
 
     config.device = "cuda" if torch.cuda.is_available() else "cpu"
     config.n_gpu = torch.cuda.device_count() # config.n_gpu 
-    set_seed(seed=11, n_gpu=config.n_gpu)
+
+    # TODO: Siyi
+    random_seed = random.randint(1, 10000)
+    set_seed(seed=random_seed, n_gpu=config.n_gpu)
 
     # getting text tokenizer
     tokenizer = SimpleTokenizer()

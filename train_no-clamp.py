@@ -7,8 +7,10 @@ from omegaconf import OmegaConf
 from dataloader.dataset import CLIP_COCO_dataset
 from dataloader.data_loaders import get_dataloader
 
+# # from model.model import CLIP
 import clip
-from model.model import CLIP_Align
+# from clip.model import CLIP
+from model.model import CLIP
 
 from utils.simple_tokenizer import SimpleTokenizer
 from utils.custom_schedulers import get_cosine_schedule_with_warmup, get_cosine_with_hard_restarts_schedule_with_warmup
@@ -35,7 +37,6 @@ def train(config, train_dataset, model):
     
     optimizer = AdamW(model.parameters(), lr=config.optimizer.params.lr, eps=config.optimizer.params.eps, weight_decay=config.optimizer.params.weight_decay)
 
-
     # Warmup iterations = 20% of total iterations
     # num_warmup_steps = int(0.20 * t_total)
     num_warmup_steps = 0
@@ -51,13 +52,9 @@ def train(config, train_dataset, model):
         model.logit_scale.data = torch.ones([]) * np.log(1 / temp)
         model.logit_scale.requires_grad = True
 
-    save_checkpoint(config, 0, 0, model, optimizer) 
     
     model = model.to(torch.device(config.device))
     model.train()
-
-    # save original checkpoint
-    
 
     logger.info("***** Running training *****")
     logger.info("  Num examples = %d", len(train_dataset))
@@ -76,9 +73,6 @@ def train(config, train_dataset, model):
     global_step, global_loss, global_acc = 0, 0.0, 0.0
     model.zero_grad()
 
-    if config.num_train_epochs == 0:
-        return global_step, global_loss
-
     for epoch in range(int(config.num_train_epochs)):
         # only for testing, when there is generally good alignment
         if epoch == 5000:
@@ -89,10 +83,10 @@ def train(config, train_dataset, model):
                 else:
                     print("Training", name)
         for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
+            input_images, input_texts = batch
 
             input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
+            input_texts = input_texts.to(torch.device(config.device))
             
             image_features, text_features = model(input_images, input_texts)
 
@@ -136,10 +130,12 @@ def train(config, train_dataset, model):
                 optimizer.step() # PYTORCH 1.x : call optimizer.step() first then scheduler.step()
                 
                 # logit scaling set as max 100 as mentioned in CLIP paper # log(100) = 4.6052
+                """
                 if config.n_gpu == 1:
                     model.logit_scale.data = torch.clamp(model.logit_scale.data, 0, 4.6052)
                 elif config.n_gpu > 1:
                     model.module.logit_scale.data = torch.clamp(model.module.logit_scale.data, 0, 4.6052)
+                """
 
                 if scheduler:
                     scheduler.step() 
@@ -193,7 +189,6 @@ def save_checkpoint(config, epoch, global_step, model, optimizer):
                     'epoch' : epoch,
                     'global_step' : global_step,
                     'model_state_dict' : model.module.state_dict(),
-                    'model_W' : model.W,
                     'optimizer_state_dict': optimizer.state_dict()
                 }, checkpoint_path)
             else:
@@ -201,7 +196,6 @@ def save_checkpoint(config, epoch, global_step, model, optimizer):
                     'epoch' : epoch,
                     'global_step' : global_step,
                     'model_state_dict' : model.state_dict(),
-                    'model_W' : model.W,
                     'optimizer_state_dict': optimizer.state_dict()
                 }, checkpoint_path)
 
@@ -226,6 +220,7 @@ def main():
     parser.add_argument("--lr", default=None, type=float, required=False)
     parser.add_argument("--learn_temp", default=None, type=int, required=False)
     parser.add_argument("--load_inital", default=0, type=int, required=False)
+    parser.add_argument("--temp", default=None, type=float, required=False)
 
 
     args = parser.parse_args()
@@ -246,12 +241,14 @@ def main():
         config.saved_checkpoints = args.saved_checkpoints
     if args.logs : 
         config.logs = args.logs
-    if args.num_train_epochs >= 0: 
+    if args.num_train_epochs : 
         config.num_train_epochs = args.num_train_epochs
     if args.lr :
         config.optimizer.params.lr = args.lr
     if args.learn_temp :
         config.learn_temp = args.learn_temp
+    if args.temp :
+        config.temp = args.temp
 
         
 
@@ -273,90 +270,30 @@ def main():
     model_params = dict(model_config.RN50)
     model_params['vision_layers'] = tuple(model_params['vision_layers'])
     model_params['vision_patch_size'] = None
-    model = CLIP_Align(**model_params)
+    model = CLIP(**model_params)
 
-    model = model.to(torch.device(config.device))
+    # load certain initialization
+    if args.load_inital:
+        pretrained_path = '/scratch/qingqu_root/qingqu1/siyich/multimodal-gap/initial_checkpoints/checkpoint_1000.pt'
+        checkpoint = torch.load(pretrained_path)
+        state_dict = checkpoint['model_state_dict']
+        model.load_state_dict(state_dict)
+    # model = model.to(device)
 
     logger.info(f"Training/evaluation parameters {train_config}")
 
+    # getting dataset for training
     train_dataset = CLIP_COCO_dataset(config, tokenizer)
 
-    model.train()
-
-    # TODO: compute and update W
-    config.train_batch_size = config.per_gpu_train_batch_size * max(1, config.n_gpu)    
-    train_dataloader = get_dataloader(config, train_dataset, is_train=True)
-    with torch.no_grad():
-        image_feature_list = []
-        text_feature_list = []
-        for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
-            input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
-            # print(input_images.shape)
-            image_features, text_features = model(input_images, input_texts)
-            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-            image_feature_list.append(image_features)
-            text_feature_list.append(text_features)
-        image_feature_list = torch.cat(image_feature_list, dim=0)
-        text_feature_list = torch.cat(text_feature_list, dim=0)
-        u,s,vh = torch.linalg.svd(text_feature_list.T @ image_feature_list)
-        
-        text_transformed = text_feature_list @ u @ vh
-        center_dist_before_transform = torch.norm(torch.mean(image_feature_list,dim=0)-torch.mean(text_feature_list,dim=0))
-        center_dist = torch.norm(torch.mean(image_feature_list,dim=0)-torch.mean(text_transformed,dim=0))
-        # print(center_dist_before_transform)
-        # print(center_dist)
-        logger.info("Center distance before transform = %s", center_dist_before_transform)
-        logger.info("Center distance after transform = %s", center_dist)
-    
-        model.set_W(u@vh)
-
-    with torch.no_grad():
-        image_feature_list = []
-        text_feature_list = []
-        for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
-            input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
-            # print(input_images.shape)
-            image_features, text_features = model(input_images, input_texts)
-            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-            image_feature_list.append(image_features)
-            text_feature_list.append(text_features)
-        image_feature_list = torch.cat(image_feature_list, dim=0)
-        text_feature_list = torch.cat(text_feature_list, dim=0)
-        
-        center_dist_after_transform = torch.norm(torch.mean(image_feature_list,dim=0)-torch.mean(text_feature_list,dim=0))
-        # print(center_dist_after_transform)
-        logger.info("Center distance after transform (test) = %s", center_dist_after_transform)
-
+    # TODO: using clip preprocess
+    # _, preprocess = clip.load('RN50', "cpu")
+    # train_dataset = CLIP_COCO_dataset(config, tokenizer, clip_token = True, clip_prepro = preprocess)
 
 
     # Now training
     global_step, avg_loss = train(config, train_dataset, model)
-
-    with torch.no_grad():
-        image_feature_list = []
-        text_feature_list = []
-        for step, batch in enumerate(train_dataloader):
-            input_images, _ = batch
-            input_images = input_images.to(torch.device(config.device))
-            input_texts = torch.clone(input_images)
-            # print(input_images.shape)
-            image_features, text_features = model(input_images, input_texts)
-            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-            image_feature_list.append(image_features)
-            text_feature_list.append(text_features)
-        image_feature_list = torch.cat(image_feature_list, dim=0)
-        text_feature_list = torch.cat(text_feature_list, dim=0)
-        center_dist = torch.norm(torch.mean(image_feature_list,dim=0)-torch.mean(text_feature_list,dim=0))
-        # print(center_dist)
     
-    logger.info("Center distance after training = %s", center_dist)
+    logger.info("Training done: total_step = %s, avg loss = %s", global_step, avg_loss)
     
 
 if __name__ == "__main__":
